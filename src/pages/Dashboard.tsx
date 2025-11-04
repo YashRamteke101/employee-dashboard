@@ -1,9 +1,9 @@
-import React from "react";
 import { EmployeeDashboard } from "../components/Employee";
+import "../styles/employee-dashboard.css";
 
 export default function DashboardPage() {
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "var(--spacing-lg)" }}>
+    <div className="fw-page-layout">
       <EmployeeDashboard />
     </div>
   );

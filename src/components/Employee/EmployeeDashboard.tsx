@@ -1,20 +1,41 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useEmployees from "../../hooks/useEmployees";
 import EmployeeSummary from "./EmployeeSummary";
 import DataGrid from "../DataGrid/DataGrid";
-import type {
-  ColDef,
-  ICellRendererParams,
-  ValueFormatterParams,
-  ValueGetterParams,
+import {
+  type ColDef,
+  type ICellRendererParams,
+  type IRowNode,
+  type SelectionChangedEvent,
+  type ValueFormatterParams,
+  type ValueGetterParams,
 } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import type { AgGridReact } from "ag-grid-react";
+import "../../styles/employee-dashboard.css";
+
+
+const departmentColor = (dept: string) => {
+  const colors: Record<string, string> = {
+    Engineering: "#2563eb",
+    HR: "#7e22ce",
+    Design: "#db2777",
+    Finance: "#059669",
+    Sales: "#d97706",
+    Marketing: "#9333ea",
+    Product: "#4f46e5",
+    Support: "#0284c7",
+    Legal: "#334155",
+  };
+  return colors[dept] || "#475569";
+};
 
 export default function EmployeeDashboard() {
   const { data, loading, stats } = useEmployees();
+  const [exportCsv, setExportCsv] = useState(false);
   const gridRef = useRef<AgGridReact>(null);
+  const [selectedRows, setSelectedRows] = useState<IRowNode[]>([]);
 
   const columnDefs = useMemo<ColDef[]>(
     () => [
@@ -28,11 +49,29 @@ export default function EmployeeDashboard() {
         sortable: true,
         cellClass: "fw-cell-bold",
       },
-      { field: "department", headerName: "Department", minWidth: 150 },
-      { field: "position", headerName: "Position", minWidth: 180 },
+      {
+        field: "department",
+        minWidth: 140,
+        filter: "agTextColumnFilter",
+        cellRenderer: (params: ICellRendererParams) => (
+          <span
+            className="fw-badge"
+            style={{ backgroundColor: departmentColor(params.value) }}
+          >
+            {params.value}
+          </span>
+        ),
+      },
+      {
+        field: "position",
+        headerName: "Position",
+        filter: "agTextColumnFilter",
+        minWidth: 180
+      },
       {
         field: "salary",
         headerName: "Salary",
+        filter: "agNumberColumnFilter",
         valueFormatter: (p: ValueFormatterParams) =>
           `₹ ${p.value?.toLocaleString()}`,
         type: "numberColumn",
@@ -42,6 +81,7 @@ export default function EmployeeDashboard() {
       {
         field: "hireDate",
         headerName: "Hire Date",
+        filter: "agDateColumnFilter",
         valueFormatter: (p: ValueFormatterParams) =>
           new Date(p.value).toLocaleDateString(),
         minWidth: 140,
@@ -49,15 +89,34 @@ export default function EmployeeDashboard() {
       {
         field: "performanceRating",
         headerName: "Performance",
-        minWidth: 140,
+        filter: "agNumberColumnFilter",
+        minWidth: 150,
+        cellRenderer: (params: ICellRendererParams) => {
+          const rating = Number(params.value) || 0;
+          const maxStars = 5;
+          const filled = "★".repeat(rating);
+          const empty = "☆".repeat(maxStars - rating);
+
+          return (
+            <span className="fw-stars" title={`${rating} / ${maxStars}`}>
+              <span className="fw-star-filled">{filled}</span>
+              <span className="fw-star-empty">{empty}</span>
+            </span>
+          );
+        },
         cellStyle: { textAlign: "center" },
       },
-      { field: "manager", headerName: "Manager", minWidth: 150 },
+      {
+        field: "manager",
+        filter: "agTextColumnFilter",
+        headerName: "Manager",
+        minWidth: 150
+      },
       {
         headerName: "Status",
         field: "isActive",
         pinned: "right",
-        minWidth: 140,
+        cellStyle: { textAlign: "center" },
         cellRenderer: (params: ICellRendererParams) => (
           <span
             style={{
@@ -68,6 +127,7 @@ export default function EmployeeDashboard() {
               color: params.value === true ? "#065F46" : "#7F1D1D",
               fontWeight: 600,
               fontSize: "13px",
+
             }}
           >
             {params.value ? "Active" : "Inactive"}
@@ -79,10 +139,21 @@ export default function EmployeeDashboard() {
   );
 
   useEffect(() => {
-    if (loading) gridRef.current?.api?.showLoadingOverlay();
-    else if (!data?.length) gridRef.current?.api?.showNoRowsOverlay();
-    else gridRef.current?.api?.hideOverlay();
-  }, [loading, data]);
+    if (exportCsv) {
+      gridRef?.current?.api.exportDataAsCsv({
+        onlySelected: true,
+      });
+      setExportCsv?.(false);
+    }
+  }, [exportCsv, setExportCsv]);
+
+  const onSelectionChanged = useCallback((event: SelectionChangedEvent) => {
+    if (event?.api?.getSelectedNodes()) {
+      setSelectedRows(event?.api?.getSelectedNodes());
+    }
+  }, []);
+
+
 
   return (
     <div className="employee-dashboard">
@@ -92,12 +163,23 @@ export default function EmployeeDashboard() {
         avgSalary={stats.avgSalary}
       />
 
+      <button
+        className="fw-btn-primary"
+        disabled={selectedRows?.length === 0}
+        onClick={() => setExportCsv(true)}
+      >
+        Export CSV 📤
+      </button>
       <div className="ag-theme-quartz fw-grid-container">
         <DataGrid
           ref={gridRef}
           columnDefs={columnDefs}
           rowData={data}
           domLayout="autoHeight"
+          loading={loading}
+          noRowsOverlayComponent="fw-no-rows-overlay"
+          onSelectionChanged={onSelectionChanged}
+          rowSelection={{ mode: 'multiRow', checkboxes: true, headerCheckbox: true ,}}
         />
       </div>
     </div>

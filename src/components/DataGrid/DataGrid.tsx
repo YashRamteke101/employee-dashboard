@@ -13,7 +13,6 @@ import 'ag-grid-enterprise';
 
 export type CustomColDef = ColDef & { formatter?: (params: ValueFormatterParams) => string | number };
 
-// ModuleRegistry.registerModules([AllCommunityModule, ClientSideRowModelModule, CsvExportModule]);
 
  ModuleRegistry.registerModules([
     AllCommunityModule,
@@ -45,12 +44,13 @@ const DataGrid = forwardRef<AgGridReact, AgGridReactProps>(({ columnDefs, ...res
             wrapHeaderText: true,
             autoHeaderHeight: true,
             wrapText         : true,
+            floatingFilter: true,
         }),
         []
     );
 
     return (
-       <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+       <div style={{ height: "100%", display: "flex", flexDirection: "column"  }}>
             <AgGridReact
                 ref={ref}
                 columnDefs={columnDefs}
@@ -61,9 +61,9 @@ const DataGrid = forwardRef<AgGridReact, AgGridReactProps>(({ columnDefs, ...res
                 animateRows={true}
                 enableCellTextSelection={true}
                 sideBar={true}
-                className='ag-theme-alpine'
                 columnMenu='legacy'
-                theme={themeQuartz }
+                theme={themeQuartz}
+                className='ag-theme-alpine'
                 domLayout="autoHeight"
                 {...rest}
             />

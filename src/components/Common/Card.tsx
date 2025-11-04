@@ -1,4 +1,5 @@
 import React from "react";
+import "../../styles/employee-dashboard.css"; // Ensure CSS is imported here
 
 type Props = {
   title: string;
@@ -8,18 +9,15 @@ type Props = {
 
 const Card: React.FC<Props> = ({ title, value, subtitle }) => {
   return (
-   <div style={{
-  borderRadius: "var(--radius-base)",
-  padding: "var(--spacing-md)",
-  boxShadow: "var(--shadow-base)",
-  background: "var(--color-surface)",
-  minWidth: 180
-}}>
-  <div style={{ fontSize: "var(--font-size-small)", color: "var(--color-text-secondary)" }}>{title}</div>
-  <div style={{ fontSize: "24px", fontWeight: 600, marginTop:" var(--spacing-sm)", color: "var(--color-text)" }}>{value}</div>
-  {subtitle && <div style={{ fontSize: "var(--font-size-small)", color: "var(--color-text-secondary)", marginTop: "var(--spacing-sm)" }}>{subtitle}</div>}
-</div>
-
+    <div className="fw-summary-card">
+      <div className="fw-summary-title">{title}</div>
+      <div className="fw-summary-value">{value}</div>
+      {subtitle && (
+        <div className="fw-summary-title" style={{ marginTop: 6 }}>
+          {subtitle}
+        </div>
+      )}
+    </div>
   );
 };
 
